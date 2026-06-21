@@ -1,0 +1,28 @@
+﻿# 编译产物
+*.exe
+*.pdb
+*.jar
+*.dll
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# Go
+*.exe
+
+# Rust
+target/
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+
+# 系统
+Thumbs.db
+.DS_Store
