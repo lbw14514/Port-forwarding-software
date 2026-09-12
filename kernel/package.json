@@ -1,0 +1,10 @@
+{
+  "name": "portforward-kernel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js port forwarding kernel (kernel/middle.js)",
+  "main": "middle.js",
+  "scripts": {
+    "start": "node middle.js"
+  }
+}

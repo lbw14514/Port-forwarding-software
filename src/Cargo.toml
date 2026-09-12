@@ -1,0 +1,13 @@
+[package]
+name = "port_forward"
+version = "1.0.0"
+edition = "2021"
+
+# Binary name matches the file the GUI expects (rust_forward.exe).
+[[bin]]
+name = "rust_forward"
+path = "forward.rs"
+
+[profile.release]
+strip = true
+lto = true

@@ -1,0 +1,15 @@
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\bin\Release\net8.0-windows\PortForwarder.exe
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\bin\Release\net8.0-windows\PortForwarder.deps.json
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\bin\Release\net8.0-windows\PortForwarder.runtimeconfig.json
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\bin\Release\net8.0-windows\PortForwarder.dll
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\bin\Release\net8.0-windows\PortForwarder.pdb
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.AssemblyInfoInputs.cache
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.AssemblyInfo.cs
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.csproj.CoreCompileInputs.cache
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.sourcelink.json
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.dll
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\refint\PortForwarder.dll
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.pdb
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\PortForwarder.genruntimeconfig.cache
+C:\Users\admin\AppData\Local\Temp\scan14514\Port-forwarding-software\gui\obj\Release\net8.0-windows\ref\PortForwarder.dll

@@ -8,37 +8,66 @@ namespace PortForwarder
     {
         public static void Run(string[] args)
         {
-            ResourceManager.ExtractAll();
+            var missing = ResourceManager.ExtractAll();
+            foreach (var file in missing)
+                Console.WriteLine("警告: 内核文件未部署: " + file);
 
             string kernel = "cpp";
-            string listenHost = "0.0.0.0";
-            string listenPort = "8080";
-            string targetHost = "127.0.0.1";
-            string targetPort = "80";
+            string listenHost = KernelMap.DefaultListenHost;
+            string listenPort = KernelMap.DefaultListenPort;
+            string targetHost = KernelMap.DefaultTargetHost;
+            string targetPort = KernelMap.DefaultTargetPort;
 
-            for (int i = 0; i < args.Length; i++)
+            try
             {
-                switch (args[i])
+                for (int i = 0; i < args.Length; i++)
                 {
-                    case "--kernel": kernel = args[++i]; break;
-                    case "--listen-host": listenHost = args[++i]; break;
-                    case "--listen-port": listenPort = args[++i]; break;
-                    case "--target-host": targetHost = args[++i]; break;
-                    case "--target-port": targetPort = args[++i]; break;
+                    switch (args[i])
+                    {
+                        case "--kernel": kernel = NextValue(args, ref i); break;
+                        case "--listen-host": listenHost = NextValue(args, ref i); break;
+                        case "--listen-port": listenPort = NextValue(args, ref i); break;
+                        case "--target-host": targetHost = NextValue(args, ref i); break;
+                        case "--target-port": targetPort = NextValue(args, ref i); break;
+                        default:
+                            Console.WriteLine("未知参数: " + args[i]);
+                            PrintUsage();
+                            Environment.ExitCode = 2;
+                            return;
+                    }
                 }
             }
-
-            string exe = kernel switch
+            catch (ArgumentException ex)
             {
-                "node" => "node.exe",
-                "python" => "python_forward.exe",
-                "go" => "go_forward.exe",
-                "rust" => "rust_forward.exe",
-                "java" => "java_forward.exe",
-                _ => "forward_kernel.exe"
-            };
+                Console.WriteLine(ex.Message);
+                PrintUsage();
+                Environment.ExitCode = 2;
+                return;
+            }
 
-            string exePath = Path.Combine(ResourceManager.TempDir, exe);
+            string[] knownKernels = KernelMap.KernelNames();
+            if (Array.IndexOf(knownKernels, kernel) < 0)
+            {
+                Console.WriteLine("未知内核: " + kernel + "（可选: " + string.Join(", ", knownKernels) + "）");
+                Environment.ExitCode = 2;
+                return;
+            }
+            if (!KernelMap.IsValidHost(listenHost) || !KernelMap.IsValidHost(targetHost) ||
+                !KernelMap.IsValidPort(listenPort) || !KernelMap.IsValidPort(targetPort))
+            {
+                Console.WriteLine("参数无效：地址只能包含字母/数字/点/横线，端口必须是 1-65535 的整数。");
+                Environment.ExitCode = 2;
+                return;
+            }
+
+            string exePath = KernelMap.ExePath(kernel);
+            if (!File.Exists(exePath))
+            {
+                Console.WriteLine("内核文件不存在: " + exePath + "（请阅读 README.md 的「内核部署」章节）");
+                Environment.ExitCode = 2;
+                return;
+            }
+
             ProcessStartInfo psi = new ProcessStartInfo
             {
                 WorkingDirectory = ResourceManager.TempDir,
@@ -60,12 +89,35 @@ namespace PortForwarder
 
             try
             {
-                Process.Start(psi)?.WaitForExit();
+                using Process? process = Process.Start(psi);
+                if (process == null)
+                {
+                    Console.WriteLine("启动失败：进程未能创建。");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+                process.WaitForExit();
+                // Propagate the kernel exit code to our own exit code.
+                Environment.ExitCode = process.ExitCode;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("启动失败：" + ex.Message);
+                Environment.ExitCode = 1;
             }
+        }
+
+        private static string NextValue(string[] args, ref int i)
+        {
+            if (i + 1 >= args.Length)
+                throw new ArgumentException("缺少参数值: " + args[i]);
+            return args[++i];
+        }
+
+        private static void PrintUsage()
+        {
+            Console.WriteLine("用法: PortForwarder --kernel <node|cpp|python|go|rust|java>" +
+                " [--listen-host <地址>] [--listen-port <端口>] [--target-host <地址>] [--target-port <端口>]");
         }
     }
 }

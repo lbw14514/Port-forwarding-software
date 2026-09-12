@@ -15,7 +15,14 @@ namespace PortForwarder
 
         public MainForm()
         {
-            ResourceManager.ExtractAll();
+            var missing = ResourceManager.ExtractAll();
+            if (missing.Count > 0)
+            {
+                MessageBox.Show(
+                    "以下内核文件未部署，启动对应内核时会失败：\n" + string.Join("\n", missing) +
+                    "\n\n请阅读 README.md 的「内核部署」章节。",
+                    "内核未部署", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
 
             this.Text = "端口转发管理器 - by wuyulbw";
             this.Size = new Size(460, 380);
@@ -29,7 +36,7 @@ namespace PortForwarder
                 Location = new Point(20, 20),
                 AutoSize = true
             };
-            txtListenHost = new TextBox { Location = new Point(20, 45), Width = 280, Text = "0.0.0.0" };
+            txtListenHost = new TextBox { Location = new Point(20, 45), Width = 280, Text = KernelMap.DefaultListenHost };
 
             Label lblListenPort = new Label
             {
@@ -37,7 +44,7 @@ namespace PortForwarder
                 Location = new Point(20, 80),
                 AutoSize = true
             };
-            txtListenPort = new TextBox { Location = new Point(20, 105), Width = 80, Text = "8080" };
+            txtListenPort = new TextBox { Location = new Point(20, 105), Width = 80, Text = KernelMap.DefaultListenPort };
 
             Label lblTargetAddr = new Label
             {
@@ -45,7 +52,7 @@ namespace PortForwarder
                 Location = new Point(20, 140),
                 AutoSize = true
             };
-            txtTargetHost = new TextBox { Location = new Point(20, 165), Width = 280, Text = "127.0.0.1" };
+            txtTargetHost = new TextBox { Location = new Point(20, 165), Width = 280, Text = KernelMap.DefaultTargetHost };
 
             Label lblTargetPort = new Label
             {
@@ -53,7 +60,7 @@ namespace PortForwarder
                 Location = new Point(20, 200),
                 AutoSize = true
             };
-            txtTargetPort = new TextBox { Location = new Point(20, 225), Width = 80, Text = "80" };
+            txtTargetPort = new TextBox { Location = new Point(20, 225), Width = 80, Text = KernelMap.DefaultTargetPort };
 
             Label lblKernel = new Label
             {
@@ -67,7 +74,7 @@ namespace PortForwarder
                 Width = 150,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cbKernel.Items.AddRange(new string[] { "Node.js", "C++", "Python", "Go", "Rust", "Java" });
+            cbKernel.Items.AddRange(KernelMap.DisplayNames);
             cbKernel.SelectedIndex = 1;
 
             btnTopology = new Button { Text = "拓扑图", Location = new Point(20, 295), Width = 80 };
@@ -99,23 +106,32 @@ namespace PortForwarder
 
         private string GetKernelName()
         {
-            string[] names = { "node", "cpp", "python", "go", "rust", "java" };
-            return names[cbKernel.SelectedIndex];
+            return KernelMap.KernelNames()[cbKernel.SelectedIndex];
         }
 
-        private string GetExePath(string kernel)
+        // Reads and validates the four text fields. Hosts and ports end up in
+        // command lines and .bat files, so only well-formed values are accepted.
+        private bool TryGetInputs(out string listenHost, out string listenPort,
+                                  out string targetHost, out string targetPort)
         {
-            string name = kernel switch
+            listenHost = txtListenHost.Text.Trim();
+            listenPort = txtListenPort.Text.Trim();
+            targetHost = txtTargetHost.Text.Trim();
+            targetPort = txtTargetPort.Text.Trim();
+
+            if (!KernelMap.IsValidHost(listenHost) || !KernelMap.IsValidHost(targetHost))
             {
-                "node" => "node",
-                "cpp" => "forward_kernel",
-                "python" => "python_forward",
-                "go" => "go_forward",
-                "rust" => "rust_forward",
-                "java" => "java_forward",
-                _ => "forward_kernel"
-            };
-            return Path.Combine(ResourceManager.TempDir, name + ".exe");
+                MessageBox.Show("地址只能包含字母、数字、点和横线（例如 0.0.0.0 或 192.168.1.100）。",
+                    "输入无效", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            if (!KernelMap.IsValidPort(listenPort) || !KernelMap.IsValidPort(targetPort))
+            {
+                MessageBox.Show("端口必须是 1-65535 的整数。", "输入无效",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            return true;
         }
 
         private void ShowTopology()
@@ -134,12 +150,12 @@ namespace PortForwarder
 
         private void GenerateBat()
         {
+            if (!TryGetInputs(out string listenHost, out string listenPort,
+                              out string targetHost, out string targetPort))
+                return;
+
             string kernel = GetKernelName();
-            string exePath = GetExePath(kernel);
-            string listenHost = txtListenHost.Text;
-            string listenPort = txtListenPort.Text;
-            string targetHost = txtTargetHost.Text;
-            string targetPort = txtTargetPort.Text;
+            string exePath = KernelMap.ExePath(kernel);
 
             string batContent =
                 "@echo off\r\n" +
@@ -173,12 +189,18 @@ namespace PortForwarder
 
         private void StartForward()
         {
+            if (!TryGetInputs(out string listenHost, out string listenPort,
+                              out string targetHost, out string targetPort))
+                return;
+
             string kernel = GetKernelName();
-            string exePath = GetExePath(kernel);
-            string listenHost = txtListenHost.Text;
-            string listenPort = txtListenPort.Text;
-            string targetHost = txtTargetHost.Text;
-            string targetPort = txtTargetPort.Text;
+            string exePath = KernelMap.ExePath(kernel);
+            if (!File.Exists(exePath))
+            {
+                MessageBox.Show($"内核文件不存在：\n{exePath}\n\n请阅读 README.md 的「内核部署」章节。",
+                    "内核未部署", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             try
             {
@@ -202,7 +224,15 @@ namespace PortForwarder
                     psi.Arguments = $"{listenHost} {listenPort} {targetHost} {targetPort}";
                 }
 
-                Process.Start(psi);
+                using (Process? process = Process.Start(psi))
+                {
+                    if (process == null)
+                    {
+                        MessageBox.Show("启动失败：进程未能创建。", "错误",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
                 lblStatus.Text = "转发已启动 - by wuyulbw";
             }
             catch (Exception ex)

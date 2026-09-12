@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -7,7 +8,10 @@ namespace PortForwarder
     {
         public static readonly string TempDir = Path.Combine(Path.GetTempPath(), "PortForwardTool");
 
-        public static void ExtractAll()
+        // Extracts the embedded kernels into TempDir. Files already present are
+        // left alone. Returns the names of kernels that are neither embedded
+        // nor deployed, so callers can tell the user what will not work.
+        public static List<string> ExtractAll()
         {
             Directory.CreateDirectory(TempDir);
             string[] resources = {
@@ -20,22 +24,27 @@ namespace PortForwarder
                 "java_forward.exe"
             };
 
+            var missing = new List<string>();
             foreach (var res in resources)
             {
                 string dest = Path.Combine(TempDir, res);
-                if (!File.Exists(dest))
+                if (File.Exists(dest))
+                    continue;
+                using (var stream = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("PortForwarder.Resources." + res))
                 {
-                    using (var stream = Assembly.GetExecutingAssembly()
-                        .GetManifestResourceStream("PortForwarder.Resources." + res))
+                    if (stream != null)
                     {
-                        if (stream != null)
-                        {
-                            using (var fs = new FileStream(dest, FileMode.Create))
-                                stream.CopyTo(fs);
-                        }
+                        using (var fs = new FileStream(dest, FileMode.Create))
+                            stream.CopyTo(fs);
+                    }
+                    else
+                    {
+                        missing.Add(res);
                     }
                 }
             }
+            return missing;
         }
     }
 }

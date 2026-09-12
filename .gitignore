@@ -11,11 +11,11 @@ node_modules/
 __pycache__/
 *.pyc
 
-# Go
-*.exe
-
 # Rust
 target/
+
+# GUI 嵌入资源（node.exe 与各内核 exe，见 README「内核部署」）
+gui/Resources/
 
 # IDE
 .vs/
