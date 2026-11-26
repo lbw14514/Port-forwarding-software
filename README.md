@@ -1,6 +1,7 @@
 # Port-forwarding-software
 
 端口转发管理器：GUI（C# WinForms）+ 六种语言的转发内核（Node.js / C++ / Python / Go / Rust / Java）。
+我瞎写的 就玩玩
 
 ## 目录结构
 
